@@ -34,10 +34,21 @@
                     <div class="header-left">Heading</div>
                     <div class="header-right">{{current.heading}}º</div>
                 </div>
+                <div class="header-item">
+                    <div class="header-left">Altitude</div>
+                    <div class="header-right">{{current.altFt}} Feet</div>
+                </div>
 
                 <div class="header-item">
-                    <div class="header-left">Nearest City</div>
-                    <div class="header-right">Chattahooch, IN</div>
+                    <div class="header-left">Location</div>
+                    <div class="header-right">
+                      <span class="location-item-title">City:</span>
+                      <span class="location-item-value">{{current.locationDetails.city}}</span>
+                      <span class="location-item-title">State:</span>
+                      <span class="location-item-value">{{current.locationDetails.state}}</span>
+                      <span class="location-item-title">Road:</span>
+                      <span class="location-item-value">{{current.locationDetails.route}}</span>
+                    </div>
                 </div>
             </div>
 
@@ -51,7 +62,7 @@
                       path="p.path"
                       stroke="p.stroke"
                       visible='p.visible'
-                      geodesic='p.geodesic' 
+                      geodesic='p.geodesic'
                       fit="false"
                       editable="false"
                       draggable="false"

@@ -55,6 +55,14 @@ a:hover {
 .main .header .header-item .header-right {
     line-height: 2.0em;
 }
+
+.main .header .header-item .header-right .location-item-title {
+  font-weight: bold;
+}
+
+.main .header .header-item .header-right .location-item-value {
+}
+
 .angular-google-map-container {
     border: 4px solid gray;
     height: 70vh;

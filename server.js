@@ -100,11 +100,27 @@ module.exports = (() => {
                     console.log('no results from geocode', geocodeResponse)
                     res.json(location)
                 } else {
-                    let locationString = _.foldl(geocodeResponse.results, (accum, result) => {
-                        return accum + ' : ' + result.formatted_address
-                    }, '')
+                    let best = geocodeResponse.results[0]
 
-                    location.locationString = locationString
+                    let route = _.find(best.address_components, address => {
+                        return _.contains(address.types, 'route')
+                    })
+
+                    let city = _.find(best.address_components, address => {
+                        return _.contains(address.types, 'locality')
+                    })
+
+                    let state = _.find(best.address_components, address => {
+                        return _.contains(address.types, 'administrative_area_level_1')
+                    })
+
+                    let locationDetails = {
+                        route: route.short_name,
+                        city: city.short_name,
+                        state: state.short_name
+                    }
+
+                    location.locationDetails = locationDetails
                     res.json(location)
                 }
 

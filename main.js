@@ -8,50 +8,61 @@ app.config(uiGmapGoogleMapApiProvider => {
 
 })
 
-app.factory('dataService', ['$q', ($q) => {
+app.factory('dataService', ['$q','$http', ($q,$http) => {
+
+    let currentLocationURL = '/truckLastLocation'
+    let locationHistoryURL = '/truckLocation'
 
     var currentLocation = function() {
+      return $http.get(currentLocationURL)
+
+        /*
         return $q.when({
             "lat": 39.9787232,
-            "lng": -105.161233,
+            "lon": -105.161233,
             "speedMPH": 20.0,
             "altFt": 12.0,
             "heading": 123.0
         })
+        */
     };
 
     var locationHistory = function() {
+      return $http.get(locationHistoryURL)
+
+      /*
         return $q.when([{
             "lat": 39.9787232,
-            "lng": -105.161233,
+            "lon": -105.161233,
             "speedMPH": 20.0,
             "altFt": 12.0,
             "heading": 123.0
         }, {
             "lat": 40.3487232,
-            "lng": -106.331233,
+            "lon": -106.331233,
             "speedMPH": 20.0,
             "altFt": 12.0,
             "heading": 123.0
         }, {
             "lat": 41.1187232,
-            "lng": -107.561233,
+            "lon": -107.561233,
             "speedMPH": 20.0,
             "altFt": 12.0,
             "heading": 123.0
         }, {
             "lat": 42.3787232,
-            "lng": -108.561233,
+            "lon": -108.561233,
             "speedMPH": 20.0,
             "altFt": 12.0,
             "heading": 123.0
         }, {
             "lat": 43.3787232,
-            "lng": -109.561233,
+            "lon": -109.561233,
             "speedMPH": 20.0,
             "altFt": 12.0,
             "heading": 123.0
         }]);
+        */
     };
 
     return {
@@ -71,12 +82,19 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
 
         dataService.currentLocation()
             .then(cur => {
+                $scope.map.center = {
+                  latitude: cur.data.lat,
+                  longitude: cur.data.lon
+                };
+
                 $scope.current = {
-                    speedMPH: cur.speedMPH,
-                    heading: cur.heading,
+                    altFt: cur.data.altFt,
+                    locationDetails:cur.data.locationDetails,
+                    speedMPH: cur.data.speedMPH,
+                    heading: cur.data.heading,
                     coords: {
-                        latitude: cur.lat,
-                        longitude: cur.lng
+                        latitude: cur.data.lat,
+                        longitude: cur.data.lon
                     },
                     options: {
                         clickable: false,
@@ -88,10 +106,10 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
         dataService.locationHistory()
             .then(historyPoints => {
 
-                let locationHistoryPath = _.map(historyPoints, point => {
+                let locationHistoryPath = _.map(historyPoints.data, point => {
                     return {
                         latitude: point.lat,
-                        longitude: point.lng
+                        longitude: point.lon
                     }
                 })
 

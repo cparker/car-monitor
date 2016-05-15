@@ -55,7 +55,7 @@ void loop()
     Serial.print("Acquiring fix.  # of sattelites ");
     Serial.println(gps.satellites.value());
   }
-  delay(1000);
+  delay(30 * 1000);
 }
 
 
@@ -121,6 +121,10 @@ void postUpdate() {
     "numSat" : n
  }
 */
+
+/*
+  See : http://arduiniana.org/libraries/tinygpsplus/
+*/
 String buildGPSJSON() {
   String json = "";
   json += "{";
@@ -141,6 +145,8 @@ String buildGPSJSON() {
   json += gps.time.value();
   json += "\", \"numSats\" :";
   json += gps.satellites.value();
+  json += ", \"heading\":";
+  json += gps.course.deg();
   json += "}";
   return json;
 }
