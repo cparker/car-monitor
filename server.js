@@ -35,7 +35,9 @@ module.exports = (() => {
 
     let app = express()
 
-    let db = pmongo(process.env.MONGO || defaultDBConnection)
+    let mongoURI = process.env.MONGODB_URI || defaultDBConnection
+    console.log('mongoURI',mongoURI)
+    let db = pmongo(mongoURI)
 
     app.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
