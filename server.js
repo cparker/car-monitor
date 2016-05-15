@@ -2,7 +2,6 @@
 
 'use strict'
 
-const pmongo = require('promised-mongo')
 const express = require('express')
 const morgan = require('morgan')
 const _ = require('underscore')
@@ -21,7 +20,9 @@ module.exports = (() => {
     const locationURL = '/truckLocation'
     const dbName = 'truckLocation'
     const defaultDBConnection = `mongodb://localhost/${dbName}`
-    const collectionName = 'locationHistory'
+    const mongoCollectionName = 'locationHistory'
+
+    let mongoClient = bluebird.promisifyAll(require('mongodb')).MongoClient;
 
 
     const processQuery = qpm({
@@ -35,20 +36,18 @@ module.exports = (() => {
 
     let app = express()
 
-    let mongoConnectStr, mongoCollectionName
+    let dbURI = process.env.MONGODB_URI || defaultDBConnection
+    let db
 
-    if (process.env.MONGODB_URI) {
-      let mongoURITail = process.env.MONGODB_URI.substring(process.env.MONGODB_URI.lastIndexOf('/') + 1)
-      let mongoURIHead = process.env.MONGODB_URI.substring(0, process.env.MONGODB_URI.lastIndexOf('/'))
-      mongoConnectStr = mongoURIHead
-      mongoCollectionName = mongoURITail
-    } else {
-      mongoConnectStr = defaultDBConnection
-      mongoCollectionName = collectionName
-    }
-    console.log('mongoConnectStr', mongoConnectStr)
-    console.log('mongoCollectionName', mongoCollectionName)
-    let db = pmongo(mongoConnectStr)
+    console.log('dbURI', dbURI)
+    mongoClient.connect(dbURI)
+      .then(ddb => {
+        console.log('connected to mongo')
+        db = ddb
+      })
+      .catch(er => {
+        console.log('error connecting to mongo',er)
+      })
 
     app.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
@@ -66,10 +65,10 @@ module.exports = (() => {
     let getLocationHandler = (req, res) => {
         let mongoQuery = processQuery(req.query)
         db.collection(mongoCollectionName)
-            .find(mongoQuery.filter)
-            .sort(mongoQuery.sort)
-            .skip(mongoQuery.skip)
-            .limit(mongoQuery.limit)
+            .find(mongoQuery.filter || {})
+            .sort(mongoQuery.sort || {})
+            .skip(mongoQuery.skip || 0)
+            .limit(mongoQuery.limit || 0).toArray()
             .then((queryResult) => {
                 res.json(queryResult)
             })
@@ -85,7 +84,7 @@ module.exports = (() => {
     let postLocationHandler = (req, res) => {
         console.log('body ', req.body);
         req.body.dateTime = moment().toDate()
-        db.collection(mongoCollectionName).insert(req.body)
+        db.collection(mongoCollectionName).insertOne(req.body)
             .then(() => {
                 res.sendStatus(201)
             })
