@@ -1,66 +1,58 @@
 <html lang="en" ng-app="truckMonitor">
 
-<head>
-  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.js"></script>
-  <script src="http://cdn.rawgit.com/nmccready/angular-simple-logger/0.0.1/dist/index.js"></script>
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-google-maps/2.2.1/angular-google-maps.min.js"></script>
-  <script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.1/moment.min.js"></script>
-  <script src="main.js"></script>
+    <head>
+        <script src="node_modules/lodash/index.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.js"></script>
+        <script src="node_modules/angular-simple-logger/dist/angular-simple-logger.js"></script>
+        <script src="node_modules/angular-google-maps/dist/angular-google-maps.js"></script>
+        <!--script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script-->
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.1/moment.min.js"></script>
+        <script src="main.js"></script>
 
-  <link rel="stylesheet" href="main.css">
+        <link rel="stylesheet" href="main.css">
 
+    </head>
 
-</head>
+    <body ng-controller="AppCtrl">
 
-<body layout="row" ng-controller="AppCtrl">
+        <div class="main">
+            <div class="header">
+                <div class="header-item">
+                    <h3 class="title">Where is CP's Truck</h3>
+                </div>
+                <div class="header-item">
+                    <div class="header-left">Today is</div>
+                    <div class="header-right">{{now}}</div>
+                </div>
+                <div class="header-item">
+                    <div class="header-left">Currently</div>
+                    <div class="header-right">Moving</div>
+                </div>
+                <div class="header-item">
+                    <div class="header-left">Speed</div>
+                    <div class="header-right">{{current.speedMPH}}
+                        MPH</div>
+                </div>
+                <div class="header-item">
+                    <div class="header-left">Heading</div>
+                    <div class="header-right">{{current.heading}}º</div>
+                </div>
 
-  <div class="main">
-    <div class="header">
-      <div class="header-item">
-        <h3 class="title">Where is CP's Truck</h3>
-      </div>
-      <div class="header-item">
-        <div class="header-left">Today is</div>
-        <div class="header-right">{{now}}</div>
-      </div>
-      <div class="header-item">
-        <div class="header-left">Currently</div>
-        <div class="header-right">Moving</div>
-      </div>
-      <div class="header-item">
-        <div class="header-left">Speed</div>
-        <div class="header-right">67 MPH</div>
-      </div>
-      <div class="header-item">
-        <div class="header-left">Heading</div>
-        <div class="header-right">234º</div>
-      </div>
+                <div class="header-item">
+                    <div class="header-left">Nearest City</div>
+                    <div class="header-right">Chattahooch, IN</div>
+                </div>
+            </div>
 
-      <div class="header-item">
-        <div class="header-left">Nearest City</div>
-        <div class="header-right">Chattahooch, IN</div>
-      </div>
+            <div class="map">
+                <ui-gmap-google-map center='map.center' options='map.options' zoom='map.zoom' aria-label="Google map">
 
+                    <ui-gmap-marker idKey='123456' coords='current.coords' options='current.options'></ui-gmap-marker>
 
+                </ui-gmap-google-map>
+            </div>
+        </div>
 
-    </div>
-
-  </div>
-
-  <ui-gmap-google-map
-    center='map.center'
-    zoom='map.zoom' aria-label="Google map">
-
-    <ui-gmap-marker ng-repeat="marker in markers"
-      coords="marker.coords" options="marker.options" events="marker.events" idkey="marker.id">
-      <ui-gmap-window>
-        <div>{{marker.window.title}}</div>
-      </ui-gmap-window>
-    </ui-gmap-marker>
-
-  </ui-gmap-google-map>
-</body>
+    </body>
 
 </html>
