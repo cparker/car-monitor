@@ -35,9 +35,20 @@ module.exports = (() => {
 
     let app = express()
 
-    let mongoURI = process.env.MONGODB_URI || defaultDBConnection
-    console.log('mongoURI',mongoURI)
-    let db = pmongo(mongoURI)
+    let mongoConnectStr, mongoCollectionName
+
+    if (process.env.MONGODB_URI) {
+      let mongoURITail = process.env.MONGODB_URI.substring(process.env.MONGODB_URI.lastIndexOf('/') + 1)
+      let mongoURIHead = process.env.MONGODB_URI.substring(0, process.env.MONGODB_URI.lastIndexOf('/'))
+      mongoConnectStr = mongoURIHead
+      mongoCollectionName = mongoURITail
+    } else {
+      mongoConnectStr = defaultDBConnection
+      mongoCollectionName = collectionName
+    }
+    console.log('mongoConnectStr', mongoConnectStr)
+    console.log('mongoCollectionName', mongoCollectionName)
+    let db = pmongo(mongoConnectStr)
 
     app.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
@@ -54,7 +65,7 @@ module.exports = (() => {
 
     let getLocationHandler = (req, res) => {
         let mongoQuery = processQuery(req.query)
-        db.collection(collectionName)
+        db.collection(mongoCollectionName)
             .find(mongoQuery.filter)
             .sort(mongoQuery.sort)
             .skip(mongoQuery.skip)
@@ -74,7 +85,7 @@ module.exports = (() => {
     let postLocationHandler = (req, res) => {
         console.log('body ', req.body);
         req.body.dateTime = moment().toDate()
-        db.collection(collectionName).insert(req.body)
+        db.collection(mongoCollectionName).insert(req.body)
             .then(() => {
                 res.sendStatus(201)
             })
