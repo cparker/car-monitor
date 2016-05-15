@@ -1,10 +1,14 @@
 /**
   This reads GPS data from a GY-NEO6MV2 GPS module and POSTs to a URL
   via a sim900 module
+  adding a comment
 */
 
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
+
+// when we acquire a location from GPS, this is the maximum # of attempts per loop()
+const int maxGPSReadAttempts = 25;
 
 const String postURL = "http://cjparker.us/nug/api/rawData";
 const int jsonPostSize = 256;
@@ -20,12 +24,12 @@ int gpsRXPin = 2;
 
 // SIM900x
 int sim900TXPin = 14;
-int sim900RXPin = 13;
+int sim900RXPin = 12;
 
 TinyGPSPlus gps;
 
-SoftwareSerial gpsSerial(gpsRXPin, gpsTXPin);
-SoftwareSerial sim900Serial(sim900RXPin, sim900TXPin);
+SoftwareSerial gpsSerial(gpsRXPin, gpsTXPin,false,1024);
+SoftwareSerial sim900Serial(sim900RXPin, sim900TXPin,false,64);
 
 
 void setup() {
@@ -36,38 +40,70 @@ void setup() {
   sim900Serial.begin(sim900Baud);
 }
 
-void loop() {
+unsigned char buffer[64]; // buffer array for data recieve over serial port
+int count = 0;   // counter for buffer array
 
-  // see if GPS is sending data yet
-  while (gpsSerial.available() > 0) {
-    if (gps.encode(gpsSerial.read())) {
-      String gpsJSON = buildGPSJSON();
-      Serial.print("GPS JSON ");
-      Serial.println(gpsJSON);
+void loop()
+{
+  getLocationFromGPS();
+
+  if (gps.location.isValid()) {
+    String jsonString = buildGPSJSON();
+    Serial.println(jsonString);
+    postJSON(jsonString);
+  } else {
+    Serial.print("Acquiring fix.  # of sattelites ");
+    Serial.println(gps.satellites.value());
+  }
+  delay(1000);
+}
+
+
+
+
+void getLocationFromGPS() {
+
+  boolean gotValidSentence = false;
+
+  for (int i = 0; i < maxGPSReadAttempts && !gotValidSentence; i++) {
+    while(gpsSerial.available() > 0) {
+      char c = gpsSerial.read();
+      if (gps.encode(c)) {
+        gotValidSentence = true;
+      }
     }
+    delay(1); // feed the watchdog timer
   }
 
-//  Serial.println("delay 10sec...");
-//  delay(10000);
 }
+
+
 
 
 void postUpdate() {
   // number of times to wait for a complete set of data from GPS module
-  int gpsPasses = 5;
   boolean successfulRead = false;
 
-  for (int i = 0; i < gpsPasses && !successfulRead; i++) {
+  gpsSerial.flush();
+  for (int i = 0; i < maxGPSReadAttempts && !successfulRead; i++) {
+    Serial.print("pass ");
+    Serial.println(i);
     while (gpsSerial.available() > 0) {
+      Serial.println("we have avail");
       if (gps.encode(gpsSerial.read())) {
-        String gpsJSON = buildGPSJSON();
-        Serial.print("GPS JSON ");
-        Serial.println(gpsJSON);
-        postJSON(gpsJSON);
-        successfulRead = true;
+        if (gps.location.isValid()) {
+          Serial.println("gps location is valid");
+          String gpsJSON = "";
+          Serial.print("GPS JSON ");
+          Serial.println(gpsJSON);
+          postJSON(gpsJSON);
+          successfulRead = true;
+        } else {
+          Serial.println("location wasn't valid");
+          delay(1000);
+        }
       }
     }
-
   }
 
 
@@ -79,42 +115,39 @@ void postUpdate() {
     "lat" : "",
     "lon" : "",
     "speedMPH" : "",
-    "altFt" : ""
+    "altFt" : "",
+    "date" : "",
+    "time" : "",
+    "numSat" : n
  }
 */
 String buildGPSJSON() {
-  Serial.println("gps location valid " + gps.location.isValid());
-  /*
-  39.325799
-  -103.007813
-  */
-  char latStr[15];
-  char lonStr[15];
-  dtostrf(gps.location.lat(),12,7,latStr);
-  dtostrf(gps.location.lng(),12,7,lonStr);
-
   String json = "";
   json += "{";
-  json += "\"lat\":";
-  json += "\"";
-  json += latStr;
-  json += "\"";
+  json += "\"lat\" : ";
+  json += String(gps.location.lat(),7);
+  json += ",\"lon\" :";
+  json += String(gps.location.lng(),7);
   json += ",";
-  json += "\"lon\":";
-  json += "\"";
-  json += lonStr;
-  json += "\"";
-  json += ",";
-  json += "\"speedMPH\":";
+  json += "\"speedMPH\" : ";
   json += gps.speed.mph();
   json += ",";
-  json += "\"altFt\":";
+  json += "\"altFt\" : ";
   json += gps.altitude.feet();
+  json += ",";
+  json += "\"date\" : \"";
+  json += gps.date.value();
+  json += "\", \"time\" : \"";
+  json += gps.time.value();
+  json += "\", \"numSats\" :";
+  json += gps.satellites.value();
   json += "}";
   return json;
 }
 
 void postJSON(String json) {
+  Serial.println("postingJSON");
+
   int msToTransmit = 5000;
   // commands for posting via sim900
   String postBeginSequence[] = {
@@ -126,33 +159,119 @@ void postJSON(String json) {
     "at+httppara=\"cid\",1",
     "at+httppara=\"url\",\"" + postURL + "\"",
     "at+httppara=\"content\",\"application/json\"",
-    String("at+httpdata=") + json.length() + String(",") + msToTransmit,
+    String("at+httpdata=") + json.length() + String(",") + String(msToTransmit),
     doneStr
   };
 
   String endPostSequence[] = {
     "at+httpaction=1",
-    "at+httpterm"
+    "at+httpterm",
+    doneStr
   };
 
   sendSIMCommands(postBeginSequence);
+  delay(2000);
+  Serial.print("posting json ");
+  Serial.println(json);
   sim900Serial.println(json);
+  delay(100);
+  copySIMResponseToSerialIO();
+  delay(2000);
   sendSIMCommands(endPostSequence);
+  Serial.println("done sending json");
+}
+
+void copySIMResponseToSerialIO() {
+  while(sim900Serial.available()) {
+    Serial.write(sim900Serial.read());
+  }
 }
 
 void sendSIMCommands(String commands[]) {
   int commandDelay = 2000;
+  copySIMResponseToSerialIO();
 
   boolean done = false;
   int i = 0;
   while (!done) {
     String cmd = commands[i];
-    if (cmd != doneStr) {
+    if (String(cmd) != String(doneStr)) {
+      Serial.print("sending command: ");
+      Serial.println(cmd);
       sim900Serial.println(cmd);
+      delay(100);
+      copySIMResponseToSerialIO();
       delay(commandDelay);
     } else {
+      Serial.println("hit done command");
       done = true;
     }
     i++;
+  }
+}
+
+
+
+void displayGPSInfo()
+{
+  Serial.print(F("Location: "));
+  if (gps.location.isValid())
+  {
+    Serial.print(gps.location.lat(), 6);
+    Serial.print(F(","));
+    Serial.print(gps.location.lng(), 6);
+  }
+  else
+  {
+    Serial.print(F("INVALID"));
+  }
+
+  Serial.print(F("  Date/Time: "));
+  if (gps.date.isValid())
+  {
+    Serial.print(gps.date.month());
+    Serial.print(F("/"));
+    Serial.print(gps.date.day());
+    Serial.print(F("/"));
+    Serial.print(gps.date.year());
+  }
+  else
+  {
+    Serial.print(F("INVALID"));
+  }
+
+  Serial.print(F(" "));
+  if (gps.time.isValid())
+  {
+    if (gps.time.hour() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.hour());
+    Serial.print(F(":"));
+    if (gps.time.minute() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.minute());
+    Serial.print(F(":"));
+    if (gps.time.second() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.second());
+    Serial.print(F("."));
+    if (gps.time.centisecond() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.centisecond());
+  }
+  else
+  {
+    Serial.print(F("INVALID"));
+  }
+
+  Serial.println("");
+  Serial.print("Altitude Feet: ");  Serial.println(gps.altitude.feet());
+  Serial.println("Speed MPH"); Serial.println(gps.speed.mph());
+
+  Serial.println();
+}
+
+
+void clearBufferArray()              // function to clear buffer array
+{
+  for (int i = 0; i < count; i++)
+  {
+    buffer[i] = NULL; // clear all index of array with command NULL
   }
 }
