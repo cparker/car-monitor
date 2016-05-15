@@ -1,6 +1,7 @@
 <html lang="en" ng-app="truckMonitor">
 
     <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
         <script src="node_modules/lodash/index.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.5/angular.js"></script>
         <script src="node_modules/angular-simple-logger/dist/angular-simple-logger.js"></script>
@@ -25,10 +26,6 @@
                     <div class="header-right">{{now}}</div>
                 </div>
                 <div class="header-item">
-                    <div class="header-left">Currently</div>
-                    <div class="header-right">Moving</div>
-                </div>
-                <div class="header-item">
                     <div class="header-left">Speed</div>
                     <div class="header-right">{{current.speedMPH}}
                         MPH</div>
@@ -48,6 +45,18 @@
                 <ui-gmap-google-map center='map.center' options='map.options' zoom='map.zoom' aria-label="Google map">
 
                     <ui-gmap-marker idKey='123456' coords='current.coords' options='current.options'></ui-gmap-marker>
+
+                    <ui-gmap-polyline
+                      ng-repeat="p in polylines"
+                      path="p.path"
+                      stroke="p.stroke"
+                      visible='p.visible'
+                      geodesic='p.geodesic' 
+                      fit="false"
+                      editable="false"
+                      draggable="false"
+                      >
+                    </ui-gmap-polyline>
 
                 </ui-gmap-google-map>
             </div>
