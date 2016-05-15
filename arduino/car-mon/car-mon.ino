@@ -10,7 +10,7 @@
 // when we acquire a location from GPS, this is the maximum # of attempts per loop()
 const int maxGPSReadAttempts = 25;
 
-const String postURL = "http://cjparker.us/nug/api/rawData";
+const String postURL = "http://truck-monitor.herokuapp.com/truckLocation";
 const int jsonPostSize = 256;
 const String doneStr = "+++DONE";
 
