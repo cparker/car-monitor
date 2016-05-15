@@ -2,6 +2,7 @@
 
 'use strict'
 
+const restClient = require('request-promise')
 const express = require('express')
 const morgan = require('morgan')
 const _ = require('underscore')
@@ -18,9 +19,11 @@ const qpm = require('query-params-mongo')
 module.exports = (() => {
 
     const locationURL = '/truckLocation'
+    const lastLocationURL = '/truckLastLocation'
     const dbName = 'truckLocation'
     const defaultDBConnection = `mongodb://localhost/${dbName}`
     const mongoCollectionName = 'locationHistory'
+    const gmapAPIKey = 'AIzaSyBbLW5sJvcmtSIn7GBNoadc1m-DQgW9AFo'
 
     let mongoClient = bluebird.promisifyAll(require('mongodb')).MongoClient;
 
@@ -41,13 +44,13 @@ module.exports = (() => {
 
     console.log('dbURI', dbURI)
     mongoClient.connect(dbURI)
-      .then(ddb => {
-        console.log('connected to mongo')
-        db = ddb
-      })
-      .catch(er => {
-        console.log('error connecting to mongo',er)
-      })
+        .then(ddb => {
+            console.log('connected to mongo')
+            db = ddb
+        })
+        .catch(er => {
+            console.log('error connecting to mongo', er)
+        })
 
     app.use(function(req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
@@ -61,6 +64,58 @@ module.exports = (() => {
     app.use(bodyParser.urlencoded({
         extended: true
     }))
+
+    let getLastLocation = Async((req, res) => {
+        let location
+        db.collection(mongoCollectionName)
+            .find({})
+            .sort({
+                dateTime: -1
+            })
+            .limit(1)
+            .toArray()
+            .then((queryResult) => {
+                if (!queryResult || queryResult.length <= 0) {
+                    res.sendStatus(404).json({
+                        "result": "no last location?  That's odd."
+                    })
+                } else {
+                    location = queryResult[0]
+                    console.log('location', location)
+                    let geocodeRequest = {
+                        uri: 'https://maps.googleapis.com/maps/api/geocode/json',
+                        qs: {
+                            key: gmapAPIKey,
+                            latlng: `${location.lat},${location.lon}`,
+                            result_type: 'locality|route|point_of_interest|subpremise|premise'
+                        },
+                        json: true
+                    }
+                    return restClient(geocodeRequest)
+                }
+            })
+            .then(geocodeResponse => {
+                //console.log('geocodeResponse', JSON.stringify(geocodeResponse,null,2))
+                if (!geocodeResponse || !geocodeResponse.results || !geocodeResponse.results.length) {
+                    console.log('no results from geocode', geocodeResponse)
+                    res.json(location)
+                } else {
+                    let locationString = _.foldl(geocodeResponse.results, (accum, result) => {
+                        return accum + ' : ' + result.formatted_address
+                    }, '')
+
+                    location.locationString = locationString
+                    res.json(location)
+                }
+
+            })
+            .catch((er) => {
+                console.log('caught error', er, er.stack)
+                res.sendStatus(500, {
+                    "error": er
+                })
+            })
+    })
 
     let getLocationHandler = (req, res) => {
         let mongoQuery = processQuery(req.query)
@@ -78,7 +133,6 @@ module.exports = (() => {
                     "error": er
                 })
             })
-
     }
 
     let postLocationHandler = (req, res) => {
@@ -98,6 +152,7 @@ module.exports = (() => {
 
 
     app.get(locationURL, getLocationHandler)
+    app.get(lastLocationURL, getLastLocation)
     app.post(locationURL, postLocationHandler)
 
     app.listen(port, () => {
