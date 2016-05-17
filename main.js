@@ -1,20 +1,20 @@
 var app = angular.module('truckMonitor', ['uiGmapgoogle-maps']);
 
-app.config(uiGmapGoogleMapApiProvider => {
+app.config(function(uiGmapGoogleMapApiProvider) {
     uiGmapGoogleMapApiProvider.configure({
         key: 'AIzaSyBbLW5sJvcmtSIn7GBNoadc1m-DQgW9AFo',
         libraries: 'weather,geometry,visualization'
     })
 
-})
+});
 
-app.factory('dataService', ['$q','$http', ($q,$http) => {
+app.factory('dataService', ['$q','$http', function($q,$http) {
 
-    let currentLocationURL = '/truckLastLocation'
-    let locationHistoryURL = '/truckLocation'
+    var currentLocationURL = '/truckLastLocation';
+    var locationHistoryURL = '/truckLocation';
 
     var currentLocation = function() {
-      return $http.get(currentLocationURL)
+      return $http.get(currentLocationURL);
 
         /*
         return $q.when({
@@ -28,7 +28,7 @@ app.factory('dataService', ['$q','$http', ($q,$http) => {
     };
 
     var locationHistory = function() {
-      return $http.get(locationHistoryURL)
+      return $http.get(locationHistoryURL);
 
       /*
         return $q.when([{
@@ -68,20 +68,20 @@ app.factory('dataService', ['$q','$http', ($q,$http) => {
     return {
         currentLocation: currentLocation,
         locationHistory: locationHistory
-    }
-}])
+    };
+}]);
 
 
 app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMapApi',
     function($scope, $interval, dataService, uiGmapGoogleMapApi) {
-        $interval(() => {
+        $interval(function() {
             $scope.now = moment().format('dddd, MMMM Do YYYY, h:mm:ss a');
-        }, 1000)
+        }, 1000);
 
         $scope.polylines = [];
 
         dataService.currentLocation()
-            .then(cur => {
+            .then(function(cur) {
                 $scope.map.center = {
                   latitude: cur.data.lat,
                   longitude: cur.data.lon
@@ -100,18 +100,18 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
                         clickable: false,
                         icon: 'favicon-32x32.png'
                     }
-                }
-            })
+                };
+            });
 
         dataService.locationHistory()
-            .then(historyPoints => {
+            .then(function(historyPoints) {
 
-                let locationHistoryPath = _.map(historyPoints.data, point => {
+                var locationHistoryPath = _.map(historyPoints.data, function(point) {
                     return {
                         latitude: point.lat,
                         longitude: point.lon
-                    }
-                })
+                    };
+                });
 
                 $scope.polylines = [{
                     id: 1,
@@ -122,9 +122,7 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
                     }
 
                 }];
-
-
-            })
+            });
 
 
 
