@@ -18,7 +18,6 @@
     "mongodb": "^2.1.18",
     "morgan": "^1.7.0",
     "q": "^1.4.1",
-    "query-params-mongo": "^1.0.3",
     "request-promise": "^3.0.0",
     "underscore": "^1.8.3"
   },

@@ -13,7 +13,7 @@ const Q = require('q')
 const bluebird = require('bluebird')
 const Await = require('asyncawait/await')
 const Async = require('asyncawait/async')
-const qpm = require('query-params-mongo')
+const mongodb = require('mongodb')
 
 
 module.exports = (() => {
@@ -25,15 +25,11 @@ module.exports = (() => {
     const mongoCollectionName = 'locationHistory'
     const gmapAPIKey = 'AIzaSyBbLW5sJvcmtSIn7GBNoadc1m-DQgW9AFo'
 
-    let mongoClient = bluebird.promisifyAll(require('mongodb')).MongoClient;
+    const locationPreviousDays = 7
+
+    let mongoClient = bluebird.promisifyAll(mongodb).MongoClient;
 
 
-    const processQuery = qpm({
-        autoDetect: [{
-            fieldPattern: /_id$/,
-            dataType: 'objectId'
-        }]
-    });
 
     let port = process.env.PORT || 5000
 
@@ -134,12 +130,20 @@ module.exports = (() => {
     })
 
     let getLocationHandler = (req, res) => {
-        let mongoQuery = processQuery(req.query)
+        let mongoQuery,mongoSort
+        if (req.query.previousDays) {
+          mongoQuery = { dateTime : {$gte : moment().subtract(req.query.previousDays,'days').toDate()}}
+          mongoSort = { dateTime: 1 }
+        } else {
+          mongoQuery = { dateTime : {$gte : moment().subtract(locationPreviousDays,'days').toDate()}}
+          mongoSort = { dateTime : 1 }
+        }
+        console.log('mq',JSON.stringify(mongoQuery,null,2))
         db.collection(mongoCollectionName)
-            .find(mongoQuery.filter || {})
-            .sort(mongoQuery.sort || {})
-            .skip(mongoQuery.skip || 0)
-            .limit(mongoQuery.limit || 0).toArray()
+            .find(mongoQuery)
+            .sort(mongoSort)
+            .skip(req.query.skip || 0)
+            .limit(req.query.limit || 0).toArray()
             .then((queryResult) => {
                 res.json(queryResult)
             })
