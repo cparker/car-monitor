@@ -19,9 +19,6 @@
         <div class="main">
             <div class="header">
                 <div class="header-item">
-                    <h3 class="title">Where is CP's Truck</h3>
-                </div>
-                <div class="header-item">
                     <div class="header-left">Last Update</div>
                     <div class="header-right">{{current.lastUpdate}}</div>
                 </div>
@@ -42,11 +39,8 @@
                 <div class="header-item">
                     <div class="header-left">Location</div>
                     <div class="header-right">
-                      <span class="location-item-title">City:</span>
-                      <span class="location-item-value">{{current.locationDetails.city}}</span>
-                      <span class="location-item-title">State:</span>
-                      <span class="location-item-value">{{current.locationDetails.state}}</span>
-                      <span class="location-item-title">Road:</span>
+                      <span class="location-item-value">{{current.locationDetails.city}},</span>
+                      <span class="location-item-value">{{current.locationDetails.state}} </span>
                       <span class="location-item-value">{{current.locationDetails.route}}</span>
                     </div>
                 </div>

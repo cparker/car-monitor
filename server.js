@@ -175,7 +175,7 @@ module.exports = (() => {
     app.get(lastLocationURL, getLastLocation)
     app.post(locationURL, postLocationHandler)
 
-    app.listen(port, () => {
+    app.listen(port,'0.0.0.0', () => {
         console.log(`listening on ${port}`)
     })
 

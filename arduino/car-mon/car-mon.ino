@@ -14,8 +14,8 @@ const int maxGPSReadAttempts = 25;
 
 const int builtinRedLED = 16;
 
-const int gpsPowerPin = 2;
-const int sim900PowerPin = 0;
+const int gpsPowerPin = 13;
+const int sim900PowerPin = 15;
 
 // if speed in MPH is faster than this, we're moving
 const int movingThresholdMPH = 10;
@@ -25,7 +25,7 @@ const int numStillCyclesForDeepSleep = 10;
 
 // if the truck is moving , post updates more often
 const int movingSleepIntervalSec = 30;
-const int stationarySleepIntervalSec = 5 * 60;
+const int stationarySleepIntervalSec = 10 * 1;
 
 const String postURL = "http://truck-monitor.herokuapp.com/truckLocation";
 const int jsonPostSize = 256;
@@ -52,19 +52,29 @@ SoftwareSerial sim900Serial(sim900RXPin, sim900TXPin,false,64);;
 
 
 void setup() {
-  EEPROM.begin(4);
+  delay(1000);
+  // everything is in setup because we're using deep sleep
+  Serial.begin(ioSerialBaud);
+  Serial.println("Truck Monitor - cp@cjparker.us 2016");
+  delay(1000);
 
-  pinMode(builtinRedLED, OUTPUT);
-  digitalWrite(builtinRedLED, LOW);
+  EEPROM.begin(4);
+  pinMode(gpsPowerPin,OUTPUT);
+  pinMode(sim900PowerPin,OUTPUT);
+
+  // start with this pin low
+  digitalWrite(sim900PowerPin, LOW);
+
+  //pinMode(builtinRedLED, OUTPUT);
+  //digitalWrite(builtinRedLED, LOW);
 
   // power up the GPS
   digitalWrite(gpsPowerPin, LOW);
 
-  // everything is in setup because we're using deep sleep
-  Serial.begin(ioSerialBaud);
-  Serial.println("Truck Monitor - cp@cjparker.us 2016");
 
   stillCycleCount = EEPROM.read(0);
+  Serial.print("still cycle count");
+  Serial.println(stillCycleCount);
   if (stillCycleCount > 100) {
     // this means we're uninitialized
     Serial.println("setting eeprom value for the first time");
@@ -100,23 +110,33 @@ void setup() {
       Serial.print("Acquiring fix.  # of sattelites ");
       Serial.println(gps.satellites.value());
     }
-    digitalWrite(builtinRedLED, !digitalRead(builtinRedLED));
+    //digitalWrite(builtinRedLED, !digitalRead(builtinRedLED));
     delay(1000);
   }
 
   // turn off red led
-  digitalWrite(builtinRedLED, HIGH);
+  //digitalWrite(builtinRedLED, HIGH);
 
   // power down the GPS
   digitalWrite(gpsPowerPin, HIGH);
 
+
   if (gps.speed.mph() >= movingThresholdMPH) {
     Serial.println("we're moving");
+
+    // when we're moving, don't shut down anything
     stillCycleCount = 0;
     EEPROM.write(0,stillCycleCount);
     EEPROM.commit();
   } else {
     Serial.println("we're stationary");
+
+    // stop the GPS
+    digitalWrite(gpsPowerPin, HIGH);
+
+    // stop the sim900
+    powerDownSim();
+
     stillCycleCount++;
     if (stillCycleCount <= 100) {
       EEPROM.write(0,stillCycleCount);
@@ -135,11 +155,24 @@ void setup() {
 }
 
 
+void powerDownSim() {
+  // power down sim900
+  Serial.println("power down sim900");
+  digitalWrite(sim900PowerPin,LOW);
+  delay(5000);
+  digitalWrite(sim900PowerPin, HIGH);
+  delay(5000);
+  digitalWrite(sim900PowerPin, LOW);
+  delay(2000);
+}
+
+
 void checkSim900Status() {
   char buffer[64];
   int count = 0;
   gpsSerial.enableRx(false);
   sim900Serial.enableRx(true);
+
 
   sim900Serial.println("AT");
   delay(100);
@@ -155,14 +188,14 @@ void checkSim900Status() {
     Serial.println("sim900 is active");
   } else {
     Serial.println("sim900 is not responding, powering on");
+    digitalWrite(sim900PowerPin, HIGH);
+    delay(1000);
+    digitalWrite(sim900PowerPin, LOW);
+    // wait for it to start, then try to talk to it again
+    delay(10000);
   }
 
-  digitalWrite(sim900PowerPin, HIGH);
-  delay(1000);
-  digitalWrite(sim900PowerPin, LOW);
 
-  // wait for it to start, then try to talk to it again
-  delay(5000);
   sim900Serial.println("AT");
   delay(100);
   count = 0;
@@ -306,7 +339,7 @@ void sendSIMCommands(String commands[]) {
   boolean done = false;
   int i = 0;
   while (!done) {
-    digitalWrite(builtinRedLED, !digitalRead(builtinRedLED));
+    //digitalWrite(builtinRedLED, !digitalRead(builtinRedLED));
     String cmd = commands[i];
     if (String(cmd) != String(doneStr)) {
       Serial.print("sending command: ");
