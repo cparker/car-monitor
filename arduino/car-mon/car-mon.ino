@@ -7,15 +7,16 @@
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <EEPROM.h>
+#include <pins_arduino.h>
 
 
 // when we acquire a location from GPS, this is the maximum # of attempts per loop()
 const int maxGPSReadAttempts = 25;
 
-const int builtinRedLED = 16;
+const int builtinRedLED = BUILTIN_LED;
 
-const int gpsPowerPin = 13;
-const int sim900PowerPin = 15;
+const int gpsPowerPin = D7;
+const int sim900PowerPin = D8;
 
 // if speed in MPH is faster than this, we're moving
 const int movingThresholdMPH = 10;
@@ -36,12 +37,12 @@ int sim900Baud = 19200;
 int gpsBaud = 9600;
 
 // pins for software serial communication with GPS
-int gpsTXPin = 5;
-int gpsRXPin = 4;
+int gpsTXPin = D1;
+int gpsRXPin = D2;
 
 // SIM900x
-int sim900TXPin = 14;
-int sim900RXPin = 12;
+int sim900TXPin = D5;
+int sim900RXPin = D6;
 
 // for keeping count of how long we're sitting still
 byte stillCycleCount = 0;
@@ -53,7 +54,6 @@ SoftwareSerial sim900Serial(sim900RXPin, sim900TXPin,false,64);;
 
 void setup() {
   delay(1000);
-  // everything is in setup because we're using deep sleep
   Serial.begin(ioSerialBaud);
   Serial.println("Truck Monitor - cp@cjparker.us 2016");
   delay(1000);
@@ -69,7 +69,7 @@ void setup() {
   //digitalWrite(builtinRedLED, LOW);
 
   // power up the GPS
-  digitalWrite(gpsPowerPin, LOW);
+  digitalWrite(gpsPowerPin, HIGH);
 
 
   stillCycleCount = EEPROM.read(0);
@@ -93,7 +93,10 @@ void setup() {
 
   gpsSerial.enableRx(true);
   sim900Serial.enableRx(false);
+}
 
+void loop() {
+  Serial.println("top of loop");
   boolean postedLocation = false;
 
   while (!postedLocation) {
@@ -114,28 +117,15 @@ void setup() {
     delay(1000);
   }
 
-  // turn off red led
-  //digitalWrite(builtinRedLED, HIGH);
-
-  // power down the GPS
-  digitalWrite(gpsPowerPin, HIGH);
-
-
   if (gps.speed.mph() >= movingThresholdMPH) {
-    Serial.println("we're moving");
+    Serial.println("we're moving at the moment");
 
     // when we're moving, don't shut down anything
     stillCycleCount = 0;
     EEPROM.write(0,stillCycleCount);
     EEPROM.commit();
   } else {
-    Serial.println("we're stationary");
-
-    // stop the GPS
-    digitalWrite(gpsPowerPin, HIGH);
-
-    // stop the sim900
-    powerDownSim();
+    Serial.println("we're stationary at the moment");
 
     stillCycleCount++;
     if (stillCycleCount <= 100) {
@@ -146,11 +136,21 @@ void setup() {
 
   // long or short nap
   if (stillCycleCount >= numStillCyclesForDeepSleep) {
+    Serial.println("we've been stationary for a while");
+
+    Serial.println("power down GPS");
+
+    // stop the GPS
+    digitalWrite(gpsPowerPin, LOW);
+
+    // stop the sim900
+    powerDownSim();
+
     Serial.println("deep sleep");
     ESP.deepSleep(stationarySleepIntervalSec * 1000000);
   } else {
-    Serial.println("short sleep");
-    ESP.deepSleep(movingSleepIntervalSec * 1000000);
+    Serial.println("we're moving, short delay");
+    delay(movingSleepIntervalSec * 1000);
   }
 }
 
@@ -212,16 +212,6 @@ void checkSim900Status() {
     Serial.println("sim900 STILL NOT RESPONDING");
   }
 }
-
-
-unsigned char buffer[64]; // buffer array for data recieve over serial port
-int count = 0;   // counter for buffer array
-
-void loop()
-{
-}
-
-
 
 
 void getLocationFromGPS() {

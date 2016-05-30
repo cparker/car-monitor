@@ -136,7 +136,7 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
                 latitude: 39.8282,
                 longitude: -98.5795
             },
-            zoom: 5,
+            zoom: 6,
             options: {
                 streetViewControl: true
             }
