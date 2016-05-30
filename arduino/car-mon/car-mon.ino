@@ -73,7 +73,7 @@ void setup() {
 
 
   stillCycleCount = EEPROM.read(0);
-  Serial.print("still cycle count");
+  Serial.print("still cycle count ");
   Serial.println(stillCycleCount);
   if (stillCycleCount > 100) {
     // this means we're uninitialized
@@ -132,6 +132,9 @@ void loop() {
       EEPROM.write(0,stillCycleCount);
       EEPROM.commit();
     }
+
+    Serial.print("still count ");
+    Serial.println(stillCycleCount);
   }
 
   // long or short nap

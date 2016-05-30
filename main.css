@@ -26,12 +26,10 @@ a:hover {
     height: 100vh;
 }
 .main .header {
-    height:25vmin;
     margin: 19px;
     margin-bottom:0;
     padding: 4px;
     border: 4px solid gray;
-    overflow: hidden;
 }
 .main .map {
     flex: 1;
@@ -52,12 +50,12 @@ a:hover {
     border-right: 3px solid darkgray;
     margin-right: 5px;
     padding-right: 5px;
-    font-size: 2.7vmin;
+    font-size: 3.3vmin;
     color: #555555;
 }
 .main .header .header-item .header-right {
     line-height: 2.0em;
-    font-size: 2vmin;
+    font-size: 2.5vmin;
 }
 .main .header .header-item .header-right .location-item-title {
     font-weight: bold;
@@ -76,4 +74,11 @@ a:hover {
 
 /* Styles for phones */
 @media only screen and (min-device-width: 320px) and (max-device-width: 667px) {
+  .main .header .header-item .header-right {
+      font-size: 3.5vmin;
+  }
+
+  .main .header .header-item .header-left {
+      font-size: 4.5vmin;
+  }
 }
