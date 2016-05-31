@@ -98,7 +98,7 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
                         },
                         options: {
                             clickable: false,
-                            icon: 'favicon-32x32.png'
+                            icon: 'favicon-96x96.png'
                         }
                     };
                 });

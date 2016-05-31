@@ -72,7 +72,7 @@ module.exports = (() => {
             .toArray()
             .then((queryResult) => {
                 if (!queryResult || queryResult.length <= 0) {
-                    res.sendStatus(404).json({
+                    res.status(404).json({
                         "result": "no last location?  That's odd."
                     })
                 } else {
