@@ -130,15 +130,27 @@ module.exports = (() => {
     })
 
     let getLocationHandler = (req, res) => {
-        let mongoQuery,mongoSort
+        let mongoQuery, mongoSort
         if (req.query.previousDays) {
-          mongoQuery = { dateTime : {$gte : moment().subtract(req.query.previousDays,'days').toDate()}}
-          mongoSort = { dateTime: 1 }
+            mongoQuery = {
+                dateTime: {
+                    $gte: moment().subtract(req.query.previousDays, 'days').toDate()
+                }
+            }
+            mongoSort = {
+                dateTime: 1
+            }
         } else {
-          mongoQuery = { dateTime : {$gte : moment().subtract(locationPreviousDays,'days').toDate()}}
-          mongoSort = { dateTime : 1 }
+            mongoQuery = {
+                dateTime: {
+                    $gte: moment().subtract(locationPreviousDays, 'days').toDate()
+                }
+            }
+            mongoSort = {
+                dateTime: 1
+            }
         }
-        console.log('mq',JSON.stringify(mongoQuery,null,2))
+        console.log('mq', JSON.stringify(mongoQuery, null, 2))
         db.collection(mongoCollectionName)
             .find(mongoQuery)
             .sort(mongoSort)
@@ -158,6 +170,12 @@ module.exports = (() => {
     let postLocationHandler = (req, res) => {
         console.log('body ', req.body);
         req.body.dateTime = moment().toDate()
+        req.body.loc = {
+            type: "Point",
+            coordinates: [req.body.lon, req.body.lat]
+        }
+        delete req.body.lat
+        delete req.body.lon
         db.collection(mongoCollectionName).insertOne(req.body)
             .then(() => {
                 res.sendStatus(201)
@@ -175,7 +193,7 @@ module.exports = (() => {
     app.get(lastLocationURL, getLastLocation)
     app.post(locationURL, postLocationHandler)
 
-    app.listen(port,'0.0.0.0', () => {
+    app.listen(port, '0.0.0.0', () => {
         console.log(`listening on ${port}`)
     })
 

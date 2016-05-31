@@ -82,9 +82,9 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
             dataService.currentLocation()
                 .then(function(cur) {
                     $scope.map.center = {
-                        latitude: cur.data.lat,
-                        longitude: cur.data.lon
-                    };
+                        latitude: cur.data.loc.coordinates[1],
+                        longitude: cur.data.loc.coordinates[0]
+                      };
 
                     $scope.current = {
                         lastUpdate: moment(cur.data.dateTime).fromNow(),
@@ -93,8 +93,8 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
                         speedMPH: cur.data.speedMPH,
                         heading: cur.data.heading,
                         coords: {
-                            latitude: cur.data.lat,
-                            longitude: cur.data.lon
+                            latitude: cur.data.loc.coordinates[1],
+                            longitude: cur.data.loc.coordinates[0]
                         },
                         options: {
                             clickable: false,
@@ -113,8 +113,8 @@ app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMa
 
                 var locationHistoryPath = _.map(historyPoints.data, function(point) {
                     return {
-                        latitude: point.lat,
-                        longitude: point.lon
+                        latitude: point.loc.coordinates[1],
+                        longitude: point.loc.coordinates[0]
                     };
                 });
 
