@@ -74,7 +74,7 @@ app.factory('dataService', ['$q', '$http', function($q, $http) {
 
 app.controller('AppCtrl', ['$scope', '$interval', 'dataService', 'uiGmapGoogleMapApi',
     function($scope, $interval, dataService, uiGmapGoogleMapApi) {
-        var pollInterval = 5000;
+        var pollInterval = 10000;
 
         $scope.polylines = [];
 

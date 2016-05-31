@@ -22,11 +22,11 @@ const int sim900PowerPin = D8;
 const int movingThresholdMPH = 10;
 
 // if we're still for this many cycles, go into deep sleep
-const int numStillCyclesForDeepSleep = 10;
+const int numStillCyclesForDeepSleep = 2;
 
 // if the truck is moving , post updates more often
 const int movingSleepIntervalSec = 30;
-const int stationarySleepIntervalSec = 10 * 1;
+const int stationarySleepIntervalSec = 60 * 10;
 
 const String postURL = "http://truck-monitor.herokuapp.com/truckLocation";
 const int jsonPostSize = 256;

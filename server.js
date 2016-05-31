@@ -82,7 +82,7 @@ module.exports = (() => {
                         uri: 'https://maps.googleapis.com/maps/api/geocode/json',
                         qs: {
                             key: gmapAPIKey,
-                            latlng: `${location.lat},${location.lon}`,
+                            latlng: `${location.loc.coordinates[1]},${location.loc.coordinates[0]}`,
                             result_type: 'locality|route|point_of_interest|subpremise|premise'
                         },
                         json: true
@@ -169,6 +169,12 @@ module.exports = (() => {
 
     let postLocationHandler = (req, res) => {
         console.log('body ', req.body);
+        if (req.body && (req.body.lat === 0 || req.body.lon === 0)) {
+          console.log('lat or lon is zero, not saving bad data')
+          res.sendStatus(400, {"error" : "lat or lon was 0"})
+          return false
+        }
+
         req.body.dateTime = moment().toDate()
         req.body.loc = {
             type: "Point",
