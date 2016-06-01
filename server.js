@@ -14,10 +14,16 @@ const bluebird = require('bluebird')
 const Await = require('asyncawait/await')
 const Async = require('asyncawait/async')
 const mongodb = require('mongodb')
+const gju = require('geojson-utils')
+const nodemailer = require('nodemailer')
 
 
 module.exports = (() => {
 
+    const emailSMTPS = process.env.SMTPS
+    const milesPerMeter = 0.000621371
+    const transporter = nodemailer.createTransport(emailSMTPS)
+    const dailyUpdateURL = '/dailyUpdate'
     const locationURL = '/truckLocation'
     const lastLocationURL = '/truckLastLocation'
     const dbName = 'truckLocation'
@@ -170,9 +176,11 @@ module.exports = (() => {
     let postLocationHandler = (req, res) => {
         console.log('body ', req.body);
         if (req.body && (req.body.lat === 0 || req.body.lon === 0)) {
-          console.log('lat or lon is zero, not saving bad data')
-          res.sendStatus(400, {"error" : "lat or lon was 0"})
-          return false
+            console.log('lat or lon is zero, not saving bad data')
+            res.sendStatus(400, {
+                "error": "lat or lon was 0"
+            })
+            return false
         }
 
         req.body.dateTime = moment().toDate()
@@ -195,6 +203,75 @@ module.exports = (() => {
     }
 
 
+    let dailyUpdateHandler = (req, res) => {
+        let oneDayAgo = moment().subtract(1, 'days')
+        db.collection(mongoCollectionName)
+            .find({
+                dateTime: {
+                    "$gte": oneDayAgo.toDate()
+                }
+            })
+            .sort({
+                dateTime: 1
+            })
+            .toArray()
+            .then(results => {
+                let head = _.head(results)
+                let tail = _.tail(results)
+                let thresholdMeters = 100
+                let totDistanceAlongPath = _.foldl(tail, (accum, currentPoint) => {
+                    let dMet = gju.pointDistance(accum.point.loc, currentPoint.loc)
+                        // filter out gps noise.
+                    if (dMet >= thresholdMeters) {
+                        return {
+                            distance: accum.distance + dMet,
+                            point: currentPoint
+                        }
+                    } else {
+                        return {
+                            distance: accum.distance,
+                            point: currentPoint
+                        }
+                    }
+                }, {
+                    point: head,
+                    distance: 0
+                })
+                console.log('tot distance along path (meters) ', totDistanceAlongPath.distance)
+                console.log('miles ', totDistanceAlongPath.distance * milesPerMeter)
+                sendEmail('cp@cjparker.us', `You traveled ${(totDistanceAlongPath.distance * milesPerMeter).toFixed(1)} miles yesterday!`, () => {
+                  res.sendStatus(201)
+                })
+            })
+            .catch(er => {
+                console.log('er', er)
+                res.status(500).json({
+                    error: er
+                })
+            })
+    }
+
+    let sendEmail = ((xto, message,cb) => {
+        let mailOptions = {
+            from: '"truckmonitor" <cjparker1971@gmail.com>', // sender address
+            to: xto,
+            subject: 'Daily Update',
+            text: message
+        }
+
+        transporter.sendMail(mailOptions, function(error, info) {
+            if (error) {
+                return console.log(error);
+            }
+            console.log('Message sent: ' + info.response);
+            cb()
+        });
+
+
+    })
+
+
+    app.post(dailyUpdateURL, dailyUpdateHandler)
     app.get(locationURL, getLocationHandler)
     app.get(lastLocationURL, getLastLocation)
     app.post(locationURL, postLocationHandler)

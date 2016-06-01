@@ -19,10 +19,10 @@ const int gpsPowerPin = D7;
 const int sim900PowerPin = D8;
 
 // if speed in MPH is faster than this, we're moving
-const int movingThresholdMPH = 10;
+const int movingThresholdMPH = 8;
 
 // if we're still for this many cycles, go into deep sleep
-const int numStillCyclesForDeepSleep = 2;
+const int numStillCyclesForDeepSleep = 4;
 
 // if the truck is moving , post updates more often
 const int movingSleepIntervalSec = 30;
@@ -99,7 +99,11 @@ void loop() {
   Serial.println("top of loop");
   boolean postedLocation = false;
 
+  gpsSerial.enableRx(true);
+  sim900Serial.enableRx(false);
   while (!postedLocation) {
+    gpsSerial.flush();
+    delay(1000);
     getLocationFromGPS();
 
     if (gps.location.isValid()) {
