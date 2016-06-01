@@ -252,10 +252,11 @@ module.exports = (() => {
     }
 
     let sendEmail = ((xto, message,cb) => {
+      let todayStr = moment().format('ddd MMM Do YYYY')
         let mailOptions = {
             from: '"truckmonitor" <cjparker1971@gmail.com>', // sender address
             to: xto,
-            subject: 'Daily Update',
+            subject: `daily update ${todayStr}`,
             text: message
         }
 
