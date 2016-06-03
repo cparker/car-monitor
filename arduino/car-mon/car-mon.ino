@@ -99,9 +99,13 @@ void loop() {
   Serial.println("top of loop");
   boolean postedLocation = false;
 
+  // each 'attempt' should take around a second...
+  const int maxFixAttempts = 60 * 3;
+  int fixAttemptCount = 0;
+
   gpsSerial.enableRx(true);
   sim900Serial.enableRx(false);
-  while (!postedLocation) {
+  while (!postedLocation && fixAttemptCount++ < maxFixAttempts) {
     gpsSerial.flush();
     delay(1000);
     getLocationFromGPS();
@@ -115,13 +119,20 @@ void loop() {
       postedLocation = true;
     } else {
       Serial.print("Acquiring fix.  # of sattelites ");
-      Serial.println(gps.satellites.value());
+      Serial.print(gps.satellites.value());
+      Serial.print(", ");
+      Serial.print("attempt# ");
+      Serial.println(fixAttemptCount);
+
     }
     //digitalWrite(builtinRedLED, !digitalRead(builtinRedLED));
     delay(1000);
   }
 
-  if (gps.speed.mph() >= movingThresholdMPH) {
+  Serial.println("did we post location ");
+  Serial.print(postedLocation);
+
+  if (postedLocation && gps.speed.mph() >= movingThresholdMPH) {
     Serial.println("we're moving at the moment");
 
     // when we're moving, don't shut down anything
