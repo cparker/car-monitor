@@ -123,6 +123,19 @@ void loop() {
       Serial.print(", ");
       Serial.print("attempt# ");
       Serial.println(fixAttemptCount);
+      Serial.print("charsProc: ");
+      Serial.print(gps.charsProcessed());
+      Serial.print(", ");
+      Serial.print("sentWFix: ");
+      Serial.print(gps.sentencesWithFix());
+      Serial.print(", ");
+      Serial.print("failedCheck: ");
+      Serial.print(gps.failedChecksum());
+      Serial.print(", ");
+      Serial.print("passedCheck: ");
+      Serial.print(gps.passedChecksum());
+      Serial.print(", ");
+      Serial.println("");
 
     }
     //digitalWrite(builtinRedLED, !digitalRead(builtinRedLED));

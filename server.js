@@ -239,7 +239,7 @@ module.exports = (() => {
                 })
                 console.log('tot distance along path (meters) ', totDistanceAlongPath.distance)
                 console.log('miles ', totDistanceAlongPath.distance * milesPerMeter)
-                sendEmail('cp@cjparker.us', `You traveled ${(totDistanceAlongPath.distance * milesPerMeter).toFixed(1)} miles yesterday!`, () => {
+                sendEmail('cplp@cjparker.us', `You traveled ${(totDistanceAlongPath.distance * milesPerMeter).toFixed(1)} miles yesterday!`, () => {
                   res.sendStatus(201)
                 })
             })
