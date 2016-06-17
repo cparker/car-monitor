@@ -31,7 +31,7 @@ module.exports = (() => {
     const mongoCollectionName = 'locationHistory'
     const gmapAPIKey = 'AIzaSyBbLW5sJvcmtSIn7GBNoadc1m-DQgW9AFo'
 
-    const locationPreviousDays = 7
+    const locationPreviousDays = 21
 
     let mongoClient = bluebird.promisifyAll(mongodb).MongoClient;
 
