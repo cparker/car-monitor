@@ -100,7 +100,7 @@ void loop() {
   boolean postedLocation = false;
 
   // each 'attempt' should take around a second...
-  const int maxFixAttempts = 60 * 3;
+  const int maxFixAttempts = 60 * 5;
   int fixAttemptCount = 0;
 
   gpsSerial.enableRx(true);
@@ -169,10 +169,10 @@ void loop() {
   if (stillCycleCount >= numStillCyclesForDeepSleep) {
     Serial.println("we've been stationary for a while");
 
-    Serial.println("power down GPS");
+    Serial.println("power down GPS, (skipping)");
 
     // stop the GPS
-    digitalWrite(gpsPowerPin, LOW);
+    //digitalWrite(gpsPowerPin, LOW);
 
     // stop the sim900
     powerDownSim();
